@@ -1,0 +1,157 @@
+spring:
+  application:
+    name: sentinel-stock-analysis
+  
+  # Database configuration
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/stockanalysis}
+    username: ${DATABASE_USERNAME:admin}
+    password: ${DATABASE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+          order_inserts: true
+          order_updates: true
+        connection:
+          provider_disables_autocommit: true
+        query:
+          in_clause_parameter_padding: true
+  
+  # Redis configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+  
+  # Cache configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000 # 5 minutes
+      cache-null-values: false
+  
+  # Security
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: profile, email
+
+# Server configuration
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  http2:
+    enabled: true
+
+# Application-specific configuration
+app:
+  # Python AI Service
+  python:
+    service:
+      url: ${PYTHON_SERVICE_URL:http://localhost:8000}
+      timeout: 60000
+  
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET:your-256-bit-secret-key-change-in-production}
+    expiration: 86400000 # 24 hours
+  
+  # Rate Limiting
+  rate-limit:
+    enabled: true
+    free-tier-requests-per-hour: 10
+    premium-tier-requests-per-hour: 100
+  
+  # Frontend URL (for CORS)
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.sentinel.stockanalysis: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      pythonService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+  
+  retry:
+    instances:
+      pythonService:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException

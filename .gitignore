@@ -1,0 +1,50 @@
+# Java/Maven
+spring-backend/target/
+spring-backend/.mvn/
+spring-backend/mvnw
+spring-backend/mvnw.cmd
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+python-service/__pycache__/
+python-service/*.pyc
+python-service/.pytest_cache/
+python-service/.venv/
+python-service/venv/
+python-service/*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Secrets
+secrets/
+*.pem
+*.key
